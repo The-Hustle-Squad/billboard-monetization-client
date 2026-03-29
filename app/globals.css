@@ -122,4 +122,15 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Consistent dark-theme numeric fields (no OS chrome steppers). */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
