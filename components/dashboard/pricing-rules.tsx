@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
+import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { Plus, Trash2, Save } from 'lucide-react';
 import { updateVendorRules } from '@/lib/api';
@@ -118,7 +120,7 @@ export function PricingRulesTab() {
               onChange={(e) =>
                 handleUpdateRule('vacancyThresholdHours', parseInt(e.target.value, 10) || 1)
               }
-              className="bg-zinc-900 border-zinc-700 text-white"
+              className="cursor-text bg-zinc-900 border-zinc-700 text-white tabular-nums leading-none"
             />
           </div>
 
@@ -130,18 +132,18 @@ export function PricingRulesTab() {
             <p className="text-xs text-zinc-500 mb-2">
               Maximum discount allowed (0-100%)
             </p>
-            <div className="flex items-center gap-2">
-              <Input
-                type="range"
-                min="0"
-                max="100"
-                value={rules.maxDiscountPercent}
-                onChange={(e) =>
-                  handleUpdateRule('maxDiscountPercent', parseInt(e.target.value, 10))
+            <div className="flex items-center gap-3">
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                value={[rules.maxDiscountPercent]}
+                onValueChange={(v) =>
+                  handleUpdateRule('maxDiscountPercent', v[0] ?? rules.maxDiscountPercent)
                 }
-                className="flex-1 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                className="flex-1 py-2 [&_[data-slot=slider-track]]:bg-zinc-700"
               />
-              <span className="text-sm font-semibold text-amber-400 min-w-12">
+              <span className="text-sm font-semibold tabular-nums text-primary min-w-[2.75rem] text-right">
                 {rules.maxDiscountPercent}%
               </span>
             </div>
@@ -155,9 +157,11 @@ export function PricingRulesTab() {
             <p className="text-xs text-zinc-500 mb-2">
               Lowest price allowed after discounts
             </p>
-            <div className="relative">
-              <span className="absolute left-3 top-3 text-zinc-400">$</span>
-              <Input
+            <InputGroup className="border-zinc-700 bg-zinc-900 shadow-none dark:bg-zinc-900">
+              <InputGroupAddon align="inline-start" className="text-zinc-400">
+                <InputGroupText>$</InputGroupText>
+              </InputGroupAddon>
+              <InputGroupInput
                 type="number"
                 min="0"
                 step="0.01"
@@ -165,9 +169,9 @@ export function PricingRulesTab() {
                 onChange={(e) =>
                   handleUpdateRule('minPrice', parseFloat(e.target.value) || 0)
                 }
-                className="bg-zinc-900 border-zinc-700 text-white pl-7"
+                className="cursor-text text-white tabular-nums leading-none"
               />
-            </div>
+            </InputGroup>
           </div>
 
           {/* Lock TTL */}
@@ -186,7 +190,7 @@ export function PricingRulesTab() {
               onChange={(e) =>
                 handleUpdateRule('lockTtlMinutes', parseInt(e.target.value, 10) || 1)
               }
-              className="bg-zinc-900 border-zinc-700 text-white"
+              className="cursor-text bg-zinc-900 border-zinc-700 text-white tabular-nums leading-none"
             />
           </div>
         </div>
@@ -229,7 +233,7 @@ export function PricingRulesTab() {
                   onChange={(e) =>
                     handleUpdateBucket(index, 'hoursBefore', parseFloat(e.target.value) || 0.5)
                   }
-                  className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                  className="cursor-text bg-zinc-800 border-zinc-700 text-white text-sm tabular-nums leading-none"
                   placeholder="e.g., 6"
                 />
               </div>
@@ -251,7 +255,7 @@ export function PricingRulesTab() {
                         parseInt(e.target.value, 10) || 0
                       )
                     }
-                    className="bg-zinc-800 border-zinc-700 text-white text-sm"
+                    className="cursor-text bg-zinc-800 border-zinc-700 text-white text-sm tabular-nums leading-none"
                     placeholder="e.g., 10"
                   />
                   <span className="text-zinc-400 text-sm">%</span>
@@ -261,7 +265,7 @@ export function PricingRulesTab() {
               <button
                 type="button"
                 onClick={() => handleRemoveBucket(index)}
-                className="p-2 hover:bg-zinc-700 rounded transition-colors text-rose-400"
+                className="cursor-pointer rounded p-2 text-rose-400 transition-colors hover:bg-zinc-700"
               >
                 <Trash2 size={18} />
               </button>

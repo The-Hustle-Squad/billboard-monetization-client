@@ -3,11 +3,26 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Upload, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 import { SyncSlotsModal } from './sync-slots-modal';
 import { SlotDetailPanel } from './slot-detail';
 import { listSlots } from '@/lib/api';
 import type { SlotDocument } from '@/lib/types';
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Status' },
+  { value: 'available', label: 'Available' },
+  { value: 'locked', label: 'Locked' },
+  { value: 'booked', label: 'Booked' },
+  { value: 'expired', label: 'Expired' },
+] as const;
 
 export function SlotsManagerTab() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,20 +91,31 @@ export function SlotsManagerTab() {
         {/* Controls */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex gap-2">
-            <select
+            <Select
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              onValueChange={(v) => {
+                setStatusFilter(v);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white text-sm"
             >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="locked">Locked</option>
-              <option value="booked">Booked</option>
-              <option value="expired">Expired</option>
-            </select>
+              <SelectTrigger className="h-9 min-w-[10.5rem] cursor-pointer rounded-lg border-zinc-700 bg-zinc-900 text-white shadow-none hover:bg-zinc-800/90 focus-visible:ring-amber-500/25 dark:bg-zinc-900 dark:hover:bg-zinc-800/90">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent
+                position="item-aligned"
+                className="z-50 rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100 shadow-lg"
+              >
+                {STATUS_FILTER_OPTIONS.map((opt) => (
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="cursor-pointer rounded-md pl-3 text-zinc-100 focus:bg-zinc-700 focus:text-white data-[highlighted]:bg-zinc-700 data-[highlighted]:text-white"
+                  >
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button
             onClick={() => setSyncModalOpen(true)}
@@ -164,7 +190,7 @@ export function SlotsManagerTab() {
                             e.stopPropagation();
                             handleRowClick(slot);
                           }}
-                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm transition-colors"
+                          className="inline-flex cursor-pointer items-center gap-2 px-3 py-2 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-sm transition-colors"
                         >
                           <Eye size={16} />
                           View

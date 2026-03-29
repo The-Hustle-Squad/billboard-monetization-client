@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
@@ -11,7 +11,20 @@ import {
   getSlotPricing,
   lockSlot,
 } from '@/lib/api';
-import type { SlotDocument, SlotPricing } from '@/lib/types';
+import type { SlotDocument, SlotPricing, SlotStatus } from '@/lib/types';
+
+function lockExpiresAtMs(slot: SlotDocument): number | null {
+  if (!slot.lockedUntil) return null;
+  const t = new Date(slot.lockedUntil).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/** Server says this slot is held by an active lock (for this vendor's API session). */
+function hasActiveServerLock(slot: SlotDocument): boolean {
+  if (slot.status !== 'locked' || !slot.lockId) return false;
+  const until = lockExpiresAtMs(slot);
+  return until !== null && until > Date.now();
+}
 
 interface SlotDetailPanelProps {
   slot: SlotDocument;
@@ -59,8 +72,25 @@ export function SlotDetailPanel({
     }
   }, [open, resetFlow]);
 
+  useLayoutEffect(() => {
+    if (!open) return;
+    resetFlow();
+  }, [open, slot.slotId, resetFlow]);
+
+  useLayoutEffect(() => {
+    if (!open || !hasActiveServerLock(slot)) return;
+    const until = lockExpiresAtMs(slot);
+    if (!until) return;
+    setLockId(slot.lockId!);
+    setLockExpiresAt(until);
+    setStep('locked');
+  }, [open, slot.slotId, slot.status, slot.lockId, slot.lockedUntil]);
+
   useEffect(() => {
-    if (!open || slot.status !== 'available') return;
+    const loadPricing =
+      open &&
+      (slot.status === 'available' || hasActiveServerLock(slot));
+    if (!loadPricing) return;
 
     let cancelled = false;
     setLoadingPricing(true);
@@ -80,7 +110,7 @@ export function SlotDetailPanel({
     return () => {
       cancelled = true;
     };
-  }, [open, slot.slotId, slot.status]);
+  }, [open, slot.slotId, slot.status, slot.lockId, slot.lockedUntil]);
 
   useEffect(() => {
     if (step !== 'locked' && step !== 'confirming') return;
@@ -149,7 +179,15 @@ export function SlotDetailPanel({
     }, 2000);
   };
 
-  const isSlotUnavailable = slot.status !== 'available';
+  const canResumeOrBook =
+    slot.status === 'available' || hasActiveServerLock(slot);
+  const isSlotUnavailable = !canResumeOrBook;
+
+  const displayStatus: SlotStatus =
+    slot.status === 'available' &&
+    (step === 'locking' || step === 'locked' || step === 'confirming')
+      ? 'locked'
+      : slot.status;
   const formatDate = (iso: string) => new Date(iso).toLocaleString();
   const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
 
@@ -173,7 +211,7 @@ export function SlotDetailPanel({
 
             <div>
               <p className="text-xs text-zinc-400 font-semibold mb-1">STATUS</p>
-              <StatusBadge status={slot.status} />
+              <StatusBadge status={displayStatus} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -197,11 +235,11 @@ export function SlotDetailPanel({
                 </p>
               </div>
 
-              {loadingPricing && slot.status === 'available' && (
+              {loadingPricing && canResumeOrBook && (
                 <p className="text-sm text-zinc-500">Loading live pricing…</p>
               )}
 
-              {pricingError && slot.status === 'available' && (
+              {pricingError && canResumeOrBook && (
                 <p className="text-sm text-rose-400">{pricingError}</p>
               )}
 
