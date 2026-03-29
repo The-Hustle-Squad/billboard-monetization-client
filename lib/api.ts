@@ -158,6 +158,28 @@ export function getAnalyticsSummary() {
   return apiGet<AnalyticsSummary>('/analytics/summary');
 }
 
+/** Check credentials before saving to localStorage (authenticated route). */
+export function verifyApiKey(key: string) {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return Promise.resolve({
+      data: null,
+      error: 'API key is required',
+    } satisfies ApiResult<AnalyticsSummary>);
+  }
+  const headers = new AxiosHeaders();
+  headers.set('x-api-key', trimmed);
+
+  return handleAxios(
+    () =>
+      apiClient.get<AnalyticsSummary>('/analytics/summary', {
+        skipApiKey: true,
+        headers,
+      } as InternalAxiosRequestConfig & { skipApiKey?: boolean }),
+    true
+  );
+}
+
 // Utility: set API key in localStorage
 export function setApiKey(key: string): void {
   if (typeof window !== 'undefined') {
